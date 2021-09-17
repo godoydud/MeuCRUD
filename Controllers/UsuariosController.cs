@@ -1,9 +1,12 @@
 ﻿using MeuCRUD.Models.Contexto;
 using MeuCRUD.Models.Entidades;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -12,9 +15,11 @@ namespace MeuCRUD.Controllers
     public class UsuariosController : Controller
     {
         private readonly Contexto _contexto; // Instancia o contexto
-        public UsuariosController(Contexto contexto) // Construtor da classe
+        private readonly IWebHostEnvironment _hostEnvironment;
+        public UsuariosController(Contexto contexto, IWebHostEnvironment hostEnvironment) // Construtor da classe
         {
             _contexto = contexto;
+            _hostEnvironment = hostEnvironment;
         }
 
 
@@ -36,10 +41,25 @@ namespace MeuCRUD.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create(Usuario usuario)
+        public async Task<IActionResult> Create(Usuario usuario)
         {
             if(ModelState.IsValid) // Validação
             {
+                //string wwwRootPath = _hostEnvironment.WebRootPath;
+                //string fileName = Path.GetFileNameWithoutExtension(usuario.ImageFile.FileName);
+                //string extension = Path.GetExtension(usuario.ImageFile.FileName);
+                //usuario.ImageName = fileName = fileName + DateTime.Now.ToString("yymmssfff") + extension;
+                //string path = Path.Combine(wwwRootPath + "/Image/", fileName);
+                //using (var fileStream = new FileStream(path,FileMode.Create))
+                //{
+                //    await usuario.ImageFile.CopyToAsync(fileStream);
+                //}
+                using (var memoryStream = new MemoryStream())
+                {
+                    await usuario.ImageFile.CopyToAsync(memoryStream);
+                    usuario.Imagem = new UsuarioImagem() { Imagem = memoryStream.ToArray() };
+                }
+
                 _contexto.Usuario.Add(usuario);
                 _contexto.SaveChanges();
 
@@ -52,21 +72,30 @@ namespace MeuCRUD.Controllers
         [HttpGet]
         public IActionResult Edit(int Id)
         {
-            var usuario = _contexto.Usuario.Find(Id);
-           
+            var usuario = _contexto.Usuario.Include(x => x.Imagem).Where(x => x.Id == Id).FirstOrDefault();
+
             CarregaTipoUsuario();
             return View(usuario);
         }
 
         [HttpPost]
-        public IActionResult Edit(Usuario usuario)
+        public async Task<IActionResult> EditAsync(Usuario usuario)
         {
             if (ModelState.IsValid)
             {
-                _contexto.Usuario.Update(usuario);
+                var usuario2 = _contexto.Usuario.Include(x => x.Imagem).Where(x => x.Id == usuario.Id).FirstOrDefault();
+                _contexto.UsuarioImagem.Remove(usuario2.Imagem);
+
+                using (var memoryStream = new MemoryStream())
+                {
+                    await usuario.ImageFile.CopyToAsync(memoryStream);
+                    usuario2.Imagem= new UsuarioImagem() { Imagem = memoryStream.ToArray() };
+                }
+
+                _contexto.Usuario.Update(usuario2);
                 _contexto.SaveChanges();
 
-                return RedirectToAction("Index");
+                return RedirectToAction("Edit");
             }
             else
             {
@@ -78,7 +107,7 @@ namespace MeuCRUD.Controllers
         [HttpGet]
         public IActionResult Delete(int Id)
         {
-            var usuario = _contexto.Usuario.Find(Id);
+            var usuario = _contexto.Usuario.Include(x => x.Imagem).Where(x => x.Id == Id).FirstOrDefault();
             CarregaTipoUsuario();
             return View(usuario);
         }
@@ -100,7 +129,7 @@ namespace MeuCRUD.Controllers
         [HttpGet]
         public IActionResult Details(int Id)
         {
-            var usuario = _contexto.Usuario.Find(Id);
+            var usuario = _contexto.Usuario.Include(x=>x.Imagem).Where(x=>x.Id==Id).FirstOrDefault();
             CarregaTipoUsuario();
             return View(usuario);
         }
@@ -117,5 +146,7 @@ namespace MeuCRUD.Controllers
 
             ViewBag.TiposUsuario = ItensTipoUsuario;
         }
+
+
     }
 }
