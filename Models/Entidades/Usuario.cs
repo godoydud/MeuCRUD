@@ -36,7 +36,10 @@ namespace MeuCRUD.Models.Entidades
         public IFormFile ImageFile { get; set; }
 
         public int ImagemId { get; set; }
+
+        [DisplayName("Avatar")]
         public UsuarioImagem Imagem { get; set; }
+       
     }
 
     public class UsuarioImagem

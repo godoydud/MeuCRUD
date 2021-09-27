@@ -2,6 +2,7 @@
 
 
 
+
 @{
     ViewData["Title"] = "Index";
 }
@@ -11,6 +12,16 @@
 <p>
     <a asp-action="Create">Create New</a>
 </p>
+
+<form class="form-group input-group" asp-action="Index" asp-controller="Usuarios" method="get">
+    <input class="mr-2 form-control" type="text" name="search" placeholder="Nome" value="@ViewBag.search" />
+    <div class="input-group-btn">
+        <button class="btn btn-info">
+            <img src="~/image/search.png" />
+        </button>
+    </div>
+</form>
+
 <table class="table">
     <thead>
         <tr>
@@ -37,8 +48,7 @@
         {
             <tr>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Imagem)
-
+                    <img class="rounded-circle" src="@("data:image/png;base64,"+Convert.ToBase64String(item.Imagem.Imagem))" asp-append-version="true" width="43px" height="43px" />
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Id)
@@ -55,12 +65,12 @@
                         <label>Administrador</label>
                     }
                     else
-               if (item.Tipo == 2)
+            if (item.Tipo == 2)
                     {
                         <label>Técnico</label>
                     }
                     else
-               if (item.Tipo == 3)
+            if (item.Tipo == 3)
                     {
                         <label>Usuário Normal</label>
                     }

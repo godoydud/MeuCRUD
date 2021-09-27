@@ -24,9 +24,21 @@ namespace MeuCRUD.Controllers
 
 
 
-        public IActionResult Index() // Utiliza o Index como método LISTAR
+        public IActionResult Index(string search) // Utiliza o Index como método LISTAR
         {
-            var lista = _contexto.Usuario.ToList();
+            List<Usuario> lista;
+            if (!string.IsNullOrEmpty(search))
+            {
+                lista = _contexto.Usuario.Include(x => x.Imagem).Where(x => x.NomeUsuario.Contains(search)).ToList();
+
+            }
+            else
+            {
+                lista = _contexto.Usuario.Include(x => x.Imagem).ToList();
+            }
+
+
+            ViewBag.search = search;
             CarregaTipoUsuario();
             return View(lista);
         }
@@ -43,7 +55,7 @@ namespace MeuCRUD.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(Usuario usuario)
         {
-            if(ModelState.IsValid) // Validação
+            if (ModelState.IsValid) // Validação
             {
                 //string wwwRootPath = _hostEnvironment.WebRootPath;
                 //string fileName = Path.GetFileNameWithoutExtension(usuario.ImageFile.FileName);
@@ -79,7 +91,7 @@ namespace MeuCRUD.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> EditAsync(Usuario usuario)
+        public async Task<IActionResult> Edit(Usuario usuario)
         {
             if (ModelState.IsValid)
             {
@@ -89,13 +101,13 @@ namespace MeuCRUD.Controllers
                 using (var memoryStream = new MemoryStream())
                 {
                     await usuario.ImageFile.CopyToAsync(memoryStream);
-                    usuario2.Imagem= new UsuarioImagem() { Imagem = memoryStream.ToArray() };
+                    usuario2.Imagem = new UsuarioImagem() { Imagem = memoryStream.ToArray() };
                 }
 
                 _contexto.Usuario.Update(usuario2);
                 _contexto.SaveChanges();
 
-                return RedirectToAction("Edit");
+                return RedirectToAction("Index");
             }
             else
             {
@@ -129,7 +141,16 @@ namespace MeuCRUD.Controllers
         [HttpGet]
         public IActionResult Details(int Id)
         {
-            var usuario = _contexto.Usuario.Include(x=>x.Imagem).Where(x=>x.Id==Id).FirstOrDefault();
+            var usuario = _contexto.Usuario.Include(x => x.Imagem).Where(x => x.Id == Id).FirstOrDefault();
+            CarregaTipoUsuario();
+            return View(usuario);
+        }
+
+
+        [HttpGet]
+        public IActionResult Listar(int Idade)
+        {
+            var usuario = _contexto.Usuario.Include(x => x.Imagem).Where(x => x.Idade == Idade).FirstOrDefault();
             CarregaTipoUsuario();
             return View(usuario);
         }
@@ -146,6 +167,8 @@ namespace MeuCRUD.Controllers
 
             ViewBag.TiposUsuario = ItensTipoUsuario;
         }
+
+
 
 
     }
